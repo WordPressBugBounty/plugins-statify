@@ -3,9 +3,9 @@
 * Donate link:       https://www.paypal.com/donate/?cmd=_donations&business=TD4AMD2D8EMZW
 * Tags:              analytics, pageviews, privacy, statistics, stats
 * Requires at least: 5.1
-* Tested up to:      7.0
+* Tested up to:      7.1
 * Requires PHP:      7.4
-* Stable tag:        2.0.2
+* Stable tag:        2.0.3
 * License:           GPLv3 or later
 * License URI:       https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -69,6 +69,20 @@ If you've problems or think you’ve found a bug (e.g. you’re experiencing une
 
 This behavior can be modified with the `statify__skip_tracking` hook.
 
+### Why are some sources missing in the dashboard widget? ###
+*Statify* determines the source of a visit from the [Referer](https://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/Referer) request header (or, with JavaScript tracking enabled, from `document.referrer`).
+The browser only sends this information when the originating site allows it via the [`Referrer-Policy`](https://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/Referrer-Policy) header, so the originating site controls whether Statify receives a source at all.
+
+A few common reasons why a Referer is missing:
+
+* the originating site sends `Referrer-Policy: no-referrer` or `same-origin` (the latter is the default on many Fediverse instances, including Mastodon)
+* the link uses `rel="noreferrer"` or `rel="noopener noreferrer"`
+* the link goes from an HTTPS page to an HTTP page, which most browsers strip
+* the visitor uses a browser extension that suppresses Referer headers
+
+When the browser does not send a Referer, *Statify* has no data to record. There is no workaround on the receiving end, because the privacy decision is made by the browser on the originating site.
+If you are linking from your own site and want the link to be tracked, use a plain `<a href="…">` link without `rel="noreferrer"`.
+
 ### Can further visitor data be recorded? ###
 Some plugin users want to capture additional visitor data, e.g. name of the device and resolution.
 *Statify* counts exclusively page views and no visitors, the desired data acquisition is not a question.
@@ -109,7 +123,6 @@ has to be added to the theme's `functions.php`. The condition has modified such 
 
 ### How to extend this plugin? ###
 
-* [Statify - Extended Evaluation](https://wordpress.org/plugins/extended-evaluation-for-statify/) for a more detailed evaluation and export function
 * [Statify Widget](https://wordpress.org/plugins/statify-widget/) to display most popular content
 * [Statify Blacklist](https://wordpress.org/plugins/statify-blacklist/) to define a customized blacklist for referrer spam
 
@@ -119,6 +132,14 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 
 ## Changelog ##
 You can find the full changelog in [our GitHub repository](https://github.com/pluginkollektiv/statify/blob/master/CHANGELOG.md).
+
+### 2.0.3
+* Make REST API endpoints visible to control and security plugins
+* Properly encode CSV data for download
+* Localize built-in user role names on settings page
+* Right-align numbers in tables
+* Minor dashboard JavaScript improvements
+* Tested up to WordPress 7.1
 
 ### 2.0.2
 * Translatable texts in JS-generated content now work as expected

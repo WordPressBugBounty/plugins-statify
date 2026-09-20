@@ -193,10 +193,7 @@
 	 * @return {Promise<{[key: string]: number}>} Data promise from API.
 	 */
 	function loadDaily(year) {
-		return fetchData(
-			'stats/extended',
-			new URLSearchParams({ scope: 'day', year })
-		);
+		return fetchData('stats/extended', { scope: 'day', year });
 	}
 
 	/**
@@ -237,12 +234,12 @@
 	 * @return {Promise<Array<{count: number, host: string, url: string}>>} Data promise from API.
 	 */
 	function loadPerReferrer() {
-		const param = new URLSearchParams();
+		const param = {};
 		const search = new URLSearchParams(window.location.search);
 		['post', 'start', 'end'].forEach((p) => {
 			const v = search.get(p);
 			if (v) {
-				param.set(p, v);
+				param[p] = v;
 			}
 		});
 
@@ -443,9 +440,9 @@
 				circle = new Chartist.Svg(
 					'circle',
 					{
-						cx: [d.x],
-						cy: [d.y],
-						r: [pointRadius],
+						cx: d.x,
+						cy: d.y,
+						r: pointRadius,
 						'ct:value': wp.i18n.sprintf(
 							/* translators: %s: Number of page views. */
 							wp.i18n._n(
@@ -645,6 +642,7 @@
 
 			for (let month = 1; month <= 12; month++) {
 				col = document.createElement('TD');
+				col.classList.add('right');
 				if (month in data.visits[year]) {
 					col.dataset.raw = String(data.visits[year][month]);
 					col.textContent = numberFormat.format(
@@ -659,7 +657,7 @@
 			}
 
 			col = document.createElement('TD');
-			col.classList.add('statify-table-sum');
+			col.classList.add('statify-table-sum', 'right');
 			col.dataset.raw = String(sum);
 			col.textContent = numberFormat.format(sum);
 			row.appendChild(col);
@@ -732,8 +730,13 @@
 				)
 			];
 		for (const [m, s] of min.entries()) {
-			out[m].dataset.raw = String(s);
-			out[m].textContent = vls[m] > 0 ? numberFormat.format(s) : '-';
+			if (vls[m] > 0) {
+				out[m].dataset.raw = String(s);
+				out[m].textContent = numberFormat.format(s);
+			} else {
+				out[m].dataset.raw = '';
+				out[m].textContent = '-';
+			}
 		}
 
 		out =
@@ -743,8 +746,13 @@
 				)
 			];
 		for (const [m, s] of max.entries()) {
-			out[m].dataset.raw = vls[m];
-			out[m].textContent = vls[m] > 0 ? numberFormat.format(s) : '-';
+			if (vls[m] > 0) {
+				out[m].dataset.raw = vls[m];
+				out[m].textContent = numberFormat.format(s);
+			} else {
+				out[m].dataset.raw = '';
+				out[m].textContent = '-';
+			}
 		}
 
 		for (const row of rows) {
@@ -907,6 +915,7 @@
 	 */
 	function addExportButton(table) {
 		const exportBtn = document.createElement('a');
+		let csvUrl = null;
 		exportBtn.classList.add('button');
 		exportBtn.href = '#';
 
@@ -926,19 +935,27 @@
 		// Generate CSV on demand.
 		exportBtn.textContent = wp.i18n.__('Export (CSV)', 'statify');
 		exportBtn.addEventListener('click', () => {
-			exportBtn.href =
-				'data:text/csv;charset=utf-8,' +
-				Array.from(table.rows)
-					.map((row) =>
-						Array.from(row.cells)
-							.map(
-								(col) =>
-									col.dataset.raw ??
-									`"${col.innerText.replaceAll('"', '""')}"`
-							)
-							.join(',')
-					)
-					.join('\r\n');
+			if (csvUrl) {
+				URL.revokeObjectURL(csvUrl);
+				csvUrl = null;
+			}
+
+			const csv = Array.from(table.rows)
+				.map((row) =>
+					Array.from(row.cells)
+						.map(
+							(col) =>
+								col.dataset.raw ??
+								`"${col.innerText.replaceAll('"', '""')}"`
+						)
+						.join(',')
+				)
+				.join('\r\n');
+
+			csvUrl = URL.createObjectURL(
+				new Blob([csv], { type: 'text/csv;charset=utf-8' })
+			);
+			exportBtn.href = csvUrl;
 		});
 		table.after(exportBtn);
 	}
